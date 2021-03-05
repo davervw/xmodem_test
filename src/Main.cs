@@ -36,16 +36,84 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace xmodem_test
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            //SerialPort serial = new SerialPort("COM1", 115200, Parity.None, 8, StopBits.One);
-            //serial.Open();
-            //var stream = new SimpleSerialStream(serial);
+            IPAddress ip = null;
+            ushort port;
+            int bps;
+            bool isReceive = args.Length > 0 && args[0].ToLower() == "rx";
+            bool isSend = args.Length > 0 && args[0].ToLower() == "sx";
+            bool isNet = args.Length > 1 && IPAddress.TryParse(args[1], out ip);
+            bool isSerial = args.Length > 1 && args[1].ToLower().StartsWith("com");
+            string Filename = (args.Length > 3) ? args[3] : null;
+            bool isConnect = args.Length > 4 && args[4].ToLower() == "connect";
+            bool isListen = args.Length > 4 && args[4].ToLower() == "listen";
+
+            if (args.Length == 5
+                && (isSend || isReceive)
+                && isNet
+                && ushort.TryParse(args[2], out port)
+                && (isConnect || isListen))
+            {
+                SimpleNetworkStream stream;
+                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+                if (isConnect)
+                    sock.Connect(ip, port);
+                else
+                {
+                    Socket listener = sock;
+                    IPEndPoint endpoint = new IPEndPoint(ip, port);
+                    listener.Bind(endpoint);
+                    listener.Listen();
+                    Console.WriteLine($"Listening at {endpoint}");
+                    sock = listener.Accept();
+                    listener.Close();
+                }
+                Console.WriteLine($"Connected");
+                stream = new SimpleNetworkStream(sock);
+                if (isSend)
+                {
+                    var sender = new XmodemSend(stream);
+                    var isSuccess = sender.Send(Filename);
+                    stream.Close();
+                }
+                else if (isReceive)
+                {
+                    var receiver = new XmodemReceive(stream);
+                    var isSuccess = receiver.Receive(Filename);
+                    stream.Close();
+                }
+            }
+            else if (args.Length == 4
+                && (isSend || isReceive)
+                && isSerial
+                && int.TryParse(args[2], out bps)
+                && !File.Exists(Filename))
+            {
+                SerialPort serial = new SerialPort(args[1], bps, Parity.None, 8, StopBits.One);
+                serial.Open();
+                var stream = new SimpleSerialStream(serial);
+                if (isSend)
+                {
+                    var sender = new XmodemSend(stream);
+                    var isSuccess = sender.Send(Filename);
+                    stream.Close();
+                }
+                else if (isReceive)
+                {
+                    var receiver = new XmodemReceive(stream);
+                    var isSuccess = receiver.Receive(Filename);
+                    stream.Close();
+                }
+            }
+            else
+                Console.Error.WriteLine("Usage Syntax Error.");
         }
     }
 }

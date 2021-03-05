@@ -32,7 +32,7 @@ using System.IO.Ports;
 
 namespace xmodem_test
 {
-    class SimpleSerialStream : SimpleStream
+    public class SimpleSerialStream : SimpleStream
     {
         SerialPort serial;
 

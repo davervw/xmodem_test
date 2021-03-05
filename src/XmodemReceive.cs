@@ -189,13 +189,6 @@ namespace xmodem_test
             return (packet[131] == checksum);
         }
 
-        void SendEOT()
-        {
-            var buffer = new byte[] { EOT };
-            Debug.WriteLine("> [EOT]");
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
         void SendACK()
         {
             var buffer = new byte[] { ACK };

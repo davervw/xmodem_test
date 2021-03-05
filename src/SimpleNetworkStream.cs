@@ -32,12 +32,12 @@ using System.Net.Sockets;
 
 namespace xmodem_test
 {
-    class SimpleNetworkStream : SimpleStream
+    public class SimpleNetworkStream : SimpleStream
     {
         Socket sock;
         NetworkStream stream;
 
-        SimpleNetworkStream(Socket sock)
+        public SimpleNetworkStream(Socket sock)
         {
             this.sock = sock;
             stream = new NetworkStream(sock);
@@ -61,7 +61,7 @@ namespace xmodem_test
         public override void Close()
         {
             stream.Close();
-            sock.Disconnect(false);
+            //sock.Disconnect(false);
             stream = null;
             sock = null;
         }
