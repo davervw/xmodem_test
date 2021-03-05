@@ -44,6 +44,9 @@ namespace xmodem_test
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("xmodem_test (c) 2021 by Dave Van Wagner www.davevw.com https://github.com/davervw/xmodem_test");
+            Console.WriteLine();
+
             IPAddress ip = null;
             ushort port;
             int bps;
@@ -55,8 +58,7 @@ namespace xmodem_test
             bool isConnect = args.Length > 4 && args[4].ToLower() == "connect";
             bool isListen = args.Length > 4 && args[4].ToLower() == "listen";
 
-            if (args.Length == 5
-                && (isSend || isReceive)
+            if ((isSend || isReceive)
                 && isNet
                 && ushort.TryParse(args[2], out port)
                 && (isConnect || isListen))
@@ -113,7 +115,14 @@ namespace xmodem_test
                 }
             }
             else
-                Console.Error.WriteLine("Usage Syntax Error.");
+                Console.Error.WriteLine(@"Usage:
+xmodem_test rx 127.0.0.1:10000 filename connect
+xmodem_test rx 127.0.0.1:10000 filename listen
+xmodem_test sx 127.0.0.1:10000 filename connect
+xmodem_test sx 127.0.0.1:10000 filename listen
+xmodem_test rx COM1 115200 filename
+xmodem_test sx COM1 115200 filename
+");
         }
     }
 }
