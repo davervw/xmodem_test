@@ -1,4 +1,4 @@
-﻿// xmodem_test - Xmodem.cs
+﻿// xmodem_test - XmodemSend.cs
 //
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -35,7 +35,7 @@ using System.Threading;
 
 namespace xmodem_test
 {
-    class Xmodem
+    class XmodemSend
     {
         const byte SOH = 0x01; // ^A
         const byte EOT = 0x04; // ^D
@@ -51,7 +51,7 @@ namespace xmodem_test
         int errors = 0;
         int total_errors = 0;
 
-        public Xmodem(SimpleStream stream)
+        public XmodemSend(SimpleStream stream)
         {
             this.stream = stream;
         }
@@ -63,158 +63,29 @@ namespace xmodem_test
 
         public bool Send(byte[] bytes)
         {
-            this.bytes = bytes;
-            if (!WaitForNAK())
-                return false;
-            while (offset < bytes.Length)
+            try
             {
-                SendBlock();
-                if (!HandleSendResponse())
+                this.bytes = bytes;
+                if (!WaitForNAK())
                     return false;
+                while (offset < bytes.Length)
+                {
+                    SendBlock();
+                    if (!HandleSendResponse())
+                        return false;
+                }
+                return true;
             }
-            return true;
-        }
-
-        public bool Receive(out byte[] received)
-        {
-            blockNum = 1;
-            errors = 0;
-            var bytes = new List<byte>();
-            SendNAK();
-            while (true)
+            finally
             {
-                var packet = ReadPacket();
-                if (packet == null)
-                {
-                    received = null;
-                    return false;
-                }
-                if (packet[1] == blockNum)
-                {
-                    bytes.AddRange(packet.GetRange(3, 128));
-                    SendACK();
-                    ++blockNum;
-                }
-                else if (packet[1] == blockNum - 1)
-                    SendACK();
-                else if (packet[1] == EOT)
-                {
-                    SendACK();
-                    received = bytes.ToArray();
-                    return true;
-                }
-                else
-                    SendNAK();
+                Debug.WriteLine($"errors={errors} total_errors={total_errors}");
             }
-        }
-
-        public bool Receive(string filename)
-        {
-            byte[] bytes;
-            bool result = Receive(out bytes);
-            if (result)
-                File.WriteAllBytes(Path.GetFileName(filename), bytes);
-            return result;
-        }
-
-        List<byte> ReadPacket()
-        {
-            var packet = new List<byte>();
-            var byte_buffer = new byte[1];
-            DateTime timeout = NextTimeout();
-            while (true)
-            {
-                if (stream.DataAvailable())
-                {
-                    if (stream.Read(byte_buffer, 0, 1) != 1)
-                        throw new EndOfStreamException();
-                    if (packet.Count == 0 && (byte_buffer[0] == CAN || byte_buffer[0] == EOT))
-                    {
-                        if (byte_buffer[0] == CAN)
-                            Debug.WriteLine("< [CAN]");
-                        else if (byte_buffer[0] == EOT)
-                            Debug.WriteLine("< [EOT]");
-                        else
-                            Debug.WriteLine($"< [?? {byte_buffer[0]:x2}]");
-                        for (int i = 0; i < 132; ++i)
-                            packet.Add(byte_buffer[0]);
-                        total_errors += errors;
-                        errors = 0;
-                        return packet;
-                    }
-                    if (packet.Count > 0 || byte_buffer[0] == SOH)
-                    {
-                        packet.Add(byte_buffer[0]);
-                        if (packet.Count < 132 && stream.DataAvailable())
-                        {
-                            var more = new byte[132 - packet.Count];
-                            int count = stream.Read(more, 0, more.Length);
-                            if (count == 0)
-                                throw new EndOfStreamException();
-                            packet.AddRange(more);
-                        }
-                        if (packet.Count == 132 && IsValidPacket(packet))
-                        {
-                            total_errors += errors;
-                            errors = 0;
-                            return packet;
-                        }
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"< [?? {byte_buffer[0]:x2}]");
-                        if (++errors >= 10)
-                            return null;
-                    }
-                }
-                else
-                {
-                    if (DateTime.Now >= timeout)
-                    {
-                        Debug.WriteLine("< [TIMEOUT]");
-                        if (++errors >= 10)
-                            return null;
-                        SendNAK();
-                        packet.Clear();
-                        timeout = NextTimeout();
-                    }
-                    Thread.Sleep(20);
-                }
-            }
-        }
-
-        bool IsValidPacket(List<byte> packet)
-        {
-            if (packet.Count != 132)
-                return false;
-            if (packet[0] != SOH)
-                return false;
-            if (packet[1] != (byte)~packet[2])
-                return false;
-            byte checksum = 0;
-            for (int i = 0; i < 128; ++i)
-                checksum += packet[3 + i];
-            return (packet[131] == checksum);
         }
 
         void SendEOT()
         {
             var buffer = new byte[] { EOT };
             Debug.WriteLine("> [EOT]");
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
-        void SendACK()
-        {
-            var buffer = new byte[] { ACK };
-            Debug.WriteLine("> [ACK]");
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
-        void SendNAK()
-        {
-            var buffer = new byte[] { NAK };
-            Debug.WriteLine("> [NAK]");
             stream.Write(buffer, 0, buffer.Length);
         }
 

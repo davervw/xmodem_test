@@ -48,7 +48,7 @@ namespace xmodem_test
             //var stream = new SimpleSerialStream(serial);
 
             var sender = new BidirectionalByteStream();
-            var rx = new Xmodem(sender.GetOtherEnd());
+            var rx = new XmodemReceive(sender.GetOtherEnd());
 
             // start sender in another thread
             Thread send_thread = new Thread(SendThread);
@@ -66,7 +66,7 @@ namespace xmodem_test
         static void SendThread(object context)
         {
             var sender = (BidirectionalByteStream)context;
-            var sx = new Xmodem(sender);
+            var sx = new XmodemSend(sender);
             var bytes = new List<byte>();
             for (int i = 0; i < 1000; ++i)
                 bytes.Add((byte)i);
