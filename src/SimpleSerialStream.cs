@@ -61,6 +61,8 @@ namespace xmodem_test
         public override void Close()
         {
             serial.Close();
+            serial.Dispose();
+            serial = null;
         }
     }
 }

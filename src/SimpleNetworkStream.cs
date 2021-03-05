@@ -39,6 +39,8 @@ namespace xmodem_test
 
         public SimpleNetworkStream(Socket sock)
         {
+            if (!sock.Connected)
+                throw new InvalidOperationException();
             this.sock = sock;
             stream = new NetworkStream(sock);
         }
@@ -60,8 +62,7 @@ namespace xmodem_test
 
         public override void Close()
         {
-            stream.Close();
-            //sock.Disconnect(false);
+            stream.Dispose();
             stream = null;
             sock = null;
         }
