@@ -1,3 +1,7 @@
 .vs/
-bin/
-obj/
+src/bin/
+src/obj/
+src/.vs/
+TestResults/
+tests/xmodem_unit_tests/bin/
+tests/xmodem_unit_tests/obj/

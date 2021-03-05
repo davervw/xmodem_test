@@ -1,4 +1,4 @@
-﻿// xmodem_test - BidirectionalStream.cs
+﻿// xmodem_test - SimpleBidirectionalStreams.cs
 //
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -32,20 +32,20 @@ using System.Collections.Generic;
 
 namespace xmodem_test
 {
-    class BidirectionalByteStream : SimpleStream
+    public class SimpleBidirectionalByteStream : SimpleStream
     {
         List<List<byte>> read_buffers;
         List<List<byte>> write_buffers;
 
-        public BidirectionalByteStream()
+        public SimpleBidirectionalByteStream()
         {
             read_buffers = new List<List<byte>>();
             write_buffers = new List<List<byte>>();
         }
 
-        public BidirectionalByteStream GetOtherEnd()
+        public SimpleBidirectionalByteStream GetOtherEnd()
         {
-            var stream = new BidirectionalByteStream();
+            var stream = new SimpleBidirectionalByteStream();
             stream.read_buffers = write_buffers;
             stream.write_buffers = read_buffers;
             return stream;

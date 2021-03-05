@@ -46,33 +46,6 @@ namespace xmodem_test
             //SerialPort serial = new SerialPort("COM1", 115200, Parity.None, 8, StopBits.One);
             //serial.Open();
             //var stream = new SimpleSerialStream(serial);
-
-            var sender = new BidirectionalByteStream();
-            var rx = new XmodemReceive(sender.GetOtherEnd());
-
-            // start sender in another thread
-            Thread send_thread = new Thread(SendThread);
-            send_thread.Name = "sx";
-            send_thread.Start(sender);
-
-            byte[] received;
-            var result = rx.Receive(out received);
-
-            Thread.Sleep(1000);
-            sender.Close();
-            Console.WriteLine($"result={result} received={BytesToString(received)}");
         }
-
-        static void SendThread(object context)
-        {
-            var sender = (BidirectionalByteStream)context;
-            var sx = new XmodemSend(sender);
-            var bytes = new List<byte>();
-            for (int i = 0; i < 1000; ++i)
-                bytes.Add((byte)i);
-            var result = sx.Send(bytes.ToArray());
-        }
-
-        static string BytesToString(byte[] bytes) => BitConverter.ToString(bytes).Replace('-', ' ');
     }
 }

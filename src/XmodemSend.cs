@@ -35,7 +35,7 @@ using System.Threading;
 
 namespace xmodem_test
 {
-    class XmodemSend
+    public class XmodemSend
     {
         const byte SOH = 0x01; // ^A
         const byte EOT = 0x04; // ^D

@@ -31,7 +31,7 @@ using System;
 
 namespace xmodem_test
 {
-    abstract class SimpleStream
+    public abstract class SimpleStream
     {
         public abstract bool DataAvailable();
 
