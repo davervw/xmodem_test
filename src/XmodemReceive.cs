@@ -90,7 +90,8 @@ namespace xmodem_test
             }
             finally
             {
-                Debug.WriteLine($"errors={errors} total_errors={total_errors}");
+                $"errors={errors} total_errors={total_errors}"
+                    .Log();
             }
         }
 
@@ -117,11 +118,11 @@ namespace xmodem_test
                     if (packet.Count == 0 && (byte_buffer[0] == CAN || byte_buffer[0] == EOT))
                     {
                         if (byte_buffer[0] == CAN)
-                            Debug.WriteLine("< [CAN]");
+                            "< [CAN]".Log();
                         else if (byte_buffer[0] == EOT)
-                            Debug.WriteLine("< [EOT]");
+                            "< [EOT]".Log();
                         else
-                            Debug.WriteLine($"< [?? {byte_buffer[0]:x2}]");
+                            $"< [?? {byte_buffer[0]:x2}]".Log();
                         packet.Add(byte_buffer[0]);
                         total_errors += errors;
                         errors = 0;
@@ -142,16 +143,19 @@ namespace xmodem_test
                         {
                             total_errors += errors;
                             errors = 0;
-                            Debug.WriteLine($"< [#{blockNum}]: {BytesToString(packet.ToArray())}");
+                            $"< [#{blockNum}]: {BytesToString(packet.ToArray())}"
+                                .Log();
                             return packet;
                         }
                     }
                     else
                     {
-                        Debug.WriteLine($"< [?? {byte_buffer[0]:x2}]");
+                        $"< [?? {byte_buffer[0]:x2}]"
+                            .Log();
                         if (++errors >= 10)
                         {
-                            Debug.WriteLine($"< [ERRORS] {BytesToString(packet.ToArray())}");
+                            $"< [ERRORS] {BytesToString(packet.ToArray())}"
+                                .Log();
                             return null;
                         }
                     }
@@ -160,10 +164,12 @@ namespace xmodem_test
                 {
                     if (DateTime.Now >= timeout)
                     {
-                        Debug.WriteLine("< [TIMEOUT]");
+                        "< [TIMEOUT]"
+                            .Log();
                         if (++errors >= 10)
                         {
-                            Debug.WriteLine($"< [ERRORS] {BytesToString(packet.ToArray())}");
+                            $"< [ERRORS] {BytesToString(packet.ToArray())}"
+                                .Log();
                             return null;
                         }
                         SendNAK();
@@ -192,14 +198,14 @@ namespace xmodem_test
         void SendACK()
         {
             var buffer = new byte[] { ACK };
-            Debug.WriteLine("> [ACK]");
+            "> [ACK]".Log();
             stream.Write(buffer, 0, buffer.Length);
         }
 
         void SendNAK()
         {
             var buffer = new byte[] { NAK };
-            Debug.WriteLine("> [NAK]");
+            "> [NAK]".Log();
             stream.Write(buffer, 0, buffer.Length);
         }
 

@@ -85,7 +85,7 @@ namespace xmodem_test
         void SendEOT()
         {
             var buffer = new byte[] { EOT };
-            Debug.WriteLine("> [EOT]");
+            "> [EOT]".Log();
             stream.Write(buffer, 0, buffer.Length);
         }
 
@@ -104,19 +104,19 @@ namespace xmodem_test
 
                     if (buffer[0] == NAK)
                     {
-                        Debug.WriteLine("< [NAK] OK");
+                        "< [NAK] OK".Log();
                         total_errors += errors;
                         errors = 0;
                         return true;
                     }
                     else
-                        Debug.WriteLine($"< [?? {buffer[0]:X2}]");
+                        $"< [?? {buffer[0]:X2}]".Log();
                 }
                 else
                 {
                     if (DateTime.Now >= timeout)
                     {
-                        Debug.WriteLine("< [TIMEOUT]");
+                        "< [TIMEOUT]".Log();
                         timeout = NextTimeout();
                     }
                     Thread.Sleep(20); // be nice to CPU
@@ -139,7 +139,7 @@ namespace xmodem_test
 
                     if (buffer[0] == ACK)
                     {
-                        Debug.WriteLine("< [ACK]");
+                        "< [ACK]".Log();
                         total_errors += errors;
                         errors = 0;
                         if (isLastBlock && !sentEOT)
@@ -153,7 +153,7 @@ namespace xmodem_test
                     else if (buffer[0] == NAK)
                     {
                         sentEOT = false;
-                        Debug.WriteLine("< [NAK]");
+                        "< [NAK]".Log();
                         if (++errors >= 10)
                             return false;
                         if (!ResendBlock())
@@ -161,19 +161,19 @@ namespace xmodem_test
                     }
                     else if (buffer[0] == CAN)
                     {
-                        Debug.WriteLine("< [CAN]");
+                        "< [CAN]".Log();
                         return false;
                     }
                     else
                     {
-                        Debug.WriteLine($"< [?? {buffer[0]:X2}]");
+                        $"< [?? {buffer[0]:X2}]".Log();
                     }
                 }
                 else
                 {
                     if (DateTime.Now >= timeout)
                     {
-                        Debug.WriteLine("< [TIMEOUT]");
+                        "< [TIMEOUT]".Log();
                         timeout = NextTimeout();
                     }
                     Thread.Sleep(20); // be nice to CPU
@@ -198,7 +198,7 @@ namespace xmodem_test
             packet.Add(checksum);
             var packet_bytes = packet.ToArray();
 
-            Debug.WriteLine($"> [#{blockNum}]: {BytesToString(packet_bytes)}");
+            $"> [#{blockNum}]: {BytesToString(packet_bytes)}".Log();
             stream.Write(packet_bytes, 0, packet_bytes.Length);
 
             offset += size;

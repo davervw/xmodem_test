@@ -44,7 +44,7 @@ namespace xmodem_test
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("xmodem_test (c) 2021 by Dave Van Wagner www.davevw.com https://github.com/davervw/xmodem_test");
+            Console.WriteLine("xmodem_test Copyright (c) 2021 by Dave Van Wagner www.davevw.com https://github.com/davervw/xmodem_test");
             Console.WriteLine();
 
             IPAddress ip = null;
@@ -57,16 +57,19 @@ namespace xmodem_test
             string Filename = (args.Length > 3) ? args[3] : null;
             bool isConnect = args.Length > 4 && args[4].ToLower() == "connect";
             bool isListen = args.Length > 4 && args[4].ToLower() == "listen";
+            SimpleStream stream;
 
             if ((isSend || isReceive)
                 && isNet
                 && ushort.TryParse(args[2], out port)
                 && (isConnect || isListen))
             {
-                SimpleNetworkStream stream;
                 Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
                 if (isConnect)
+                {
                     sock.Connect(ip, port);
+                    Console.WriteLine($"Connected to {ip}:{port}");
+                }
                 else
                 {
                     Socket listener = sock;
@@ -79,50 +82,50 @@ namespace xmodem_test
                 }
                 Console.WriteLine($"Connected");
                 stream = new SimpleNetworkStream(sock);
-                if (isSend)
-                {
-                    var sender = new XmodemSend(stream);
-                    var isSuccess = sender.Send(Filename);
-                    stream.Close();
-                }
-                else if (isReceive)
-                {
-                    var receiver = new XmodemReceive(stream);
-                    var isSuccess = receiver.Receive(Filename);
-                    stream.Close();
-                }
             }
             else if (args.Length == 4
                 && (isSend || isReceive)
                 && isSerial
-                && int.TryParse(args[2], out bps)
-                && !File.Exists(Filename))
+                && int.TryParse(args[2], out bps))
             {
                 SerialPort serial = new SerialPort(args[1], bps, Parity.None, 8, StopBits.One);
                 serial.Open();
-                var stream = new SimpleSerialStream(serial);
-                if (isSend)
-                {
-                    var sender = new XmodemSend(stream);
-                    var isSuccess = sender.Send(Filename);
-                    stream.Close();
-                }
-                else if (isReceive)
-                {
-                    var receiver = new XmodemReceive(stream);
-                    var isSuccess = receiver.Receive(Filename);
-                    stream.Close();
-                }
+                stream = new SimpleSerialStream(serial);
             }
             else
+            {
                 Console.Error.WriteLine(@"Usage:
-xmodem_test rx 127.0.0.1:10000 filename connect
-xmodem_test rx 127.0.0.1:10000 filename listen
-xmodem_test sx 127.0.0.1:10000 filename connect
-xmodem_test sx 127.0.0.1:10000 filename listen
+xmodem_test rx 127.0.0.1 10000 filename connect
+xmodem_test rx 127.0.0.1 10000 filename listen
+xmodem_test sx 127.0.0.1 10000 filename connect
+xmodem_test sx 127.0.0.1 10000 filename listen
 xmodem_test rx COM1 115200 filename
 xmodem_test sx COM1 115200 filename
 ");
+                return;
+            }
+
+            bool isSuccess = false;
+            if (isSend)
+            {
+                Console.WriteLine("Sending");
+                var sender = new XmodemSend(stream);
+                isSuccess = sender.Send(Filename);
+                stream.Close();
+            }
+            else if (isReceive)
+            {
+                Console.WriteLine("Receiving");
+                var receiver = new XmodemReceive(stream);
+                isSuccess = receiver.Receive(Filename);
+                stream.Close();
+            }
+
+            if (isSuccess)
+                Console.WriteLine("OK");
+            else
+                Console.WriteLine("FAIL");
+
         }
     }
 }

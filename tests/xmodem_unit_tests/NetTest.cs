@@ -49,7 +49,8 @@ namespace xmodem_unit_tests
             for (int i= size+1; i< wholePacketSize; ++i)
                 Assert.AreEqual(received[i], 0x1A);
 
-            Debug.WriteLine($"result={result} received={BytesToString(received)}");
+            $"result={result} received={BytesToString(received)}"
+                .Log();
         }
 
         static void Thread_Net_Send_Binary(object context)
