@@ -59,6 +59,9 @@ namespace xmodem_test
             bool isListen = args.Length > 4 && args[4].ToLower() == "listen";
             SimpleStream stream;
 
+            if (isReceive && File.Exists(Filename))
+                throw new Exception($"File already exists");
+
             if ((isSend || isReceive)
                 && isNet
                 && ushort.TryParse(args[2], out port)
