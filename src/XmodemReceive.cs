@@ -58,6 +58,7 @@ namespace xmodem_test
         {
             try
             {
+                ReadUntilNotAvailable();
                 blockNum = 1;
                 errors = 0;
                 var bytes = new List<byte>();
@@ -122,7 +123,10 @@ namespace xmodem_test
                         else if (byte_buffer[0] == EOT)
                             "< [EOT]".Log();
                         else
+                        {
                             $"< [?? {byte_buffer[0]:x2}]".Log();
+                            ReadUntilNotAvailable();
+                        }
                         packet.Add(byte_buffer[0]);
                         total_errors += errors;
                         errors = 0;
@@ -152,6 +156,7 @@ namespace xmodem_test
                     {
                         $"< [?? {byte_buffer[0]:x2}]"
                             .Log();
+                        ReadUntilNotAvailable();
                         if (++errors >= 10)
                         {
                             $"< [ERRORS] {BytesToString(packet.ToArray())}"
@@ -195,6 +200,22 @@ namespace xmodem_test
             return (packet[131] == checksum);
         }
 
+        void ReadUntilNotAvailable()
+        {
+            if (stream.DataAvailable())
+            {
+                byte[] buffer = new byte[256];
+                while (stream.DataAvailable())
+                {
+                    int read = stream.Read(buffer, 0, buffer.Length);
+                    var ignored_bytes = new List<byte>(buffer).GetRange(0, read);
+                    var ignored_hex = BytesToString(ignored_bytes.ToArray());
+                    $"< [IGNORED: {ignored_hex}]"
+                        .Log();
+                }
+            }
+        }
+
         void SendACK()
         {
             var buffer = new byte[] { ACK };
@@ -204,6 +225,7 @@ namespace xmodem_test
 
         void SendNAK()
         {
+            ReadUntilNotAvailable();
             var buffer = new byte[] { NAK };
             "> [NAK]".Log();
             stream.Write(buffer, 0, buffer.Length);
