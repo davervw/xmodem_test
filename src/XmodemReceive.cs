@@ -29,36 +29,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
 namespace xmodem_test
 {
-    public class XmodemReceive
+    public class XmodemReceive : XmodemBase
     {
-        const byte SOH = 0x01; // ^A
-        const byte EOT = 0x04; // ^D
-        const byte ACK = 0x06; // ^F
-        const byte NAK = 0x15; // ^U
-        const byte CAN = 0x18; // ^X
-        const byte SUB = 0x1A; // ^Z
-
-        SimpleStream stream;
-        byte blockNum = 1;
-        int errors = 0;
-        int total_errors = 0;
-
-        public XmodemReceive(SimpleStream stream)
+        public XmodemReceive(SimpleStream stream): base(stream)
         {
-            this.stream = stream;
         }
 
         public bool Receive(out byte[] received)
         {
             try
             {
-                ReadUntilNotAvailable();
+                ReadUntilNoDataAvailableForMilliseconds(0);
                 blockNum = 1;
                 errors = 0;
                 var bytes = new List<byte>();
@@ -125,7 +111,7 @@ namespace xmodem_test
                         else
                         {
                             $"< [?? {byte_buffer[0]:x2}]".Log();
-                            ReadUntilNotAvailable();
+                            ReadUntilNoDataAvailableForMilliseconds(500);
                         }
                         packet.Add(byte_buffer[0]);
                         total_errors += errors;
@@ -156,7 +142,7 @@ namespace xmodem_test
                     {
                         $"< [?? {byte_buffer[0]:x2}]"
                             .Log();
-                        ReadUntilNotAvailable();
+                        ReadUntilNoDataAvailableForMilliseconds(500);
                         if (++errors >= 10)
                         {
                             $"< [ERRORS] {BytesToString(packet.ToArray())}"
@@ -194,26 +180,12 @@ namespace xmodem_test
                 return false;
             if (packet[1] != (byte)~packet[2])
                 return false;
+
             byte checksum = 0;
             for (int i = 0; i < 128; ++i)
                 checksum += packet[3 + i];
-            return (packet[131] == checksum);
-        }
 
-        void ReadUntilNotAvailable()
-        {
-            if (stream.DataAvailable())
-            {
-                byte[] buffer = new byte[256];
-                while (stream.DataAvailable())
-                {
-                    int read = stream.Read(buffer, 0, buffer.Length);
-                    var ignored_bytes = new List<byte>(buffer).GetRange(0, read);
-                    var ignored_hex = BytesToString(ignored_bytes.ToArray());
-                    $"< [IGNORED: {ignored_hex}]"
-                        .Log();
-                }
-            }
+            return (packet[131] == checksum);
         }
 
         void SendACK()
@@ -225,14 +197,12 @@ namespace xmodem_test
 
         void SendNAK()
         {
-            ReadUntilNotAvailable();
+            ReadUntilNoDataAvailableForMilliseconds(500);
             var buffer = new byte[] { NAK };
             "> [NAK]".Log();
             stream.Write(buffer, 0, buffer.Length);
         }
 
         DateTime NextTimeout() => DateTime.Now.Add(new TimeSpan(0, 0, seconds: 10));
-
-        static string BytesToString(byte[] bytes) => BitConverter.ToString(bytes).Replace('-', ' ');
     }
 }

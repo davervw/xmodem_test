@@ -35,25 +35,13 @@ using System.Threading;
 
 namespace xmodem_test
 {
-    public class XmodemSend
+    public class XmodemSend : XmodemBase
     {
-        const byte SOH = 0x01; // ^A
-        const byte EOT = 0x04; // ^D
-        const byte ACK = 0x06; // ^F
-        const byte NAK = 0x15; // ^U
-        const byte CAN = 0x18; // ^X
-        const byte SUB = 0x1A; // ^Z
-
-        SimpleStream stream;
         int offset = 0;
-        byte blockNum = 1;
         byte[] bytes;
-        int errors = 0;
-        int total_errors = 0;
 
-        public XmodemSend(SimpleStream stream)
+        public XmodemSend(SimpleStream stream): base(stream)
         {
-            this.stream = stream;
         }
 
         public bool Send(string filename)
@@ -223,7 +211,5 @@ namespace xmodem_test
 
             return SendBlock();
         }
-
-        static string BytesToString(byte[] bytes) => BitConverter.ToString(bytes).Replace('-', ' ');
     }
 }
