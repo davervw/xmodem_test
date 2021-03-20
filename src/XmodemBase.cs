@@ -23,7 +23,7 @@ namespace xmodem_test
             this.stream = stream;
         }
 
-        protected void ReadUntilNoDataAvailableForMilliseconds(int milliseconds_minimum)
+        protected void ReadUntilNoDataAvailableAfterMilliseconds(int milliseconds_minimum)
         {
             Thread.Sleep(milliseconds_minimum);
 

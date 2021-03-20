@@ -44,7 +44,7 @@ namespace xmodem_test
         {
             try
             {
-                ReadUntilNoDataAvailableForMilliseconds(0);
+                ReadUntilNoDataAvailableAfterMilliseconds(0);
                 blockNum = 1;
                 errors = 0;
                 var bytes = new List<byte>();
@@ -111,7 +111,7 @@ namespace xmodem_test
                         else
                         {
                             $"< [?? {byte_buffer[0]:x2}]".Log();
-                            ReadUntilNoDataAvailableForMilliseconds(500);
+                            ReadUntilNoDataAvailableAfterMilliseconds(500);
                         }
                         packet.Add(byte_buffer[0]);
                         total_errors += errors;
@@ -142,7 +142,7 @@ namespace xmodem_test
                     {
                         $"< [?? {byte_buffer[0]:x2}]"
                             .Log();
-                        ReadUntilNoDataAvailableForMilliseconds(500);
+                        ReadUntilNoDataAvailableAfterMilliseconds(500);
                         if (++errors >= 10)
                         {
                             $"< [ERRORS] {BytesToString(packet.ToArray())}"
@@ -197,7 +197,7 @@ namespace xmodem_test
 
         void SendNAK()
         {
-            ReadUntilNoDataAvailableForMilliseconds(500);
+            ReadUntilNoDataAvailableAfterMilliseconds(500);
             var buffer = new byte[] { NAK };
             "> [NAK]".Log();
             stream.Write(buffer, 0, buffer.Length);
