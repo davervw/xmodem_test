@@ -23,8 +23,8 @@ namespace xmodem_unit_tests
             send_thread.Name = "sx";
             send_thread.Start(sender);
 
-            byte[] received;
-            var result = rx.Receive(out received);
+            var result = rx.Receive();
+            var received = rx.Received;
 
             int msdelayToWaitForSender = 1000;
             Thread.Sleep(msdelayToWaitForSender);

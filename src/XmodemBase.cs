@@ -6,35 +6,38 @@ namespace xmodem_test
 {
     public abstract class XmodemBase
     {
-        protected const byte SOH = 0x01; // ^A
-        protected const byte EOT = 0x04; // ^D
-        protected const byte ACK = 0x06; // ^F
-        protected const byte NAK = 0x15; // ^U
-        protected const byte CAN = 0x18; // ^X
-        protected const byte SUB = 0x1A; // ^Z
+        public const byte SOH = 0x01; // ^A
+        public const byte EOT = 0x04; // ^D
+        public const byte ACK = 0x06; // ^F
+        public const byte NAK = 0x15; // ^U
+        public const byte CAN = 0x18; // ^X
+        public const byte SUB = 0x1A; // ^Z
 
-        protected SimpleStream stream;
-        protected byte blockNum = 1;
-        protected int errors = 0;
-        protected int total_errors = 0;
+        public SimpleStream Stream { get; protected set; }
+        public byte BlockNum { get; protected set; }
+        public int Errors { get; protected set; }
+        public int TotalErrors { get; protected set; }
 
         protected XmodemBase(SimpleStream stream)
         {
-            this.stream = stream;
+            Stream = stream;
+            BlockNum = 1;
+            Errors = 0;
+            TotalErrors = 0;
         }
 
         protected void ReadUntilNoDataAvailableAfterMilliseconds(int milliseconds_minimum)
         {
             Thread.Sleep(milliseconds_minimum);
 
-            if (stream.DataAvailable())
+            if (Stream.DataAvailable())
             {
                 var ignored_bytes = new List<byte>();
 
                 byte[] buffer = new byte[256];
-                while (stream.DataAvailable())
+                while (Stream.DataAvailable())
                 {
-                    int read_len = stream.Read(buffer, 0, buffer.Length);
+                    int read_len = Stream.Read(buffer, 0, buffer.Length);
                     if (read_len > 0)
                         ignored_bytes.AddRange(new List<byte>(buffer).GetRange(0, read_len));
                 }

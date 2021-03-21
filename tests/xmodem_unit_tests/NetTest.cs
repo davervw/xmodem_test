@@ -35,8 +35,8 @@ namespace xmodem_unit_tests
             var receiver = new SimpleNetworkStream(sock);
             var rx = new XmodemReceive(receiver);
 
-            byte[] received;
-            var result = rx.Receive(out received);
+            var result = rx.Receive();
+            var received = rx.Received;
 
             Thread.Sleep(1000);
             receiver.Close();

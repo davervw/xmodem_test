@@ -66,7 +66,7 @@ namespace xmodem_test
             }
             finally
             {
-                Debug.WriteLine($"errors={errors} total_errors={total_errors}");
+                Debug.WriteLine($"errors={Errors} total_errors={TotalErrors}");
             }
         }
 
@@ -74,7 +74,7 @@ namespace xmodem_test
         {
             var buffer = new byte[] { EOT };
             "> [EOT]".Log();
-            stream.Write(buffer, 0, buffer.Length);
+            Stream.Write(buffer, 0, buffer.Length);
         }
 
         DateTime NextTimeout() => DateTime.Now.Add(new TimeSpan(0, 0, seconds: 10));
@@ -85,16 +85,16 @@ namespace xmodem_test
             DateTime timeout = NextTimeout();
             while (true)
             {
-                if (stream.DataAvailable())
+                if (Stream.DataAvailable())
                 {
-                    if (stream.Read(buffer, 0, 1) != 1)
+                    if (Stream.Read(buffer, 0, 1) != 1)
                         throw new EndOfStreamException();
 
                     if (buffer[0] == NAK)
                     {
                         "< [NAK] OK".Log();
-                        total_errors += errors;
-                        errors = 0;
+                        TotalErrors += Errors;
+                        Errors = 0;
                         return true;
                     }
                     else
@@ -120,16 +120,16 @@ namespace xmodem_test
             DateTime timeout = NextTimeout();
             while (true)
             {
-                if (stream.DataAvailable())
+                if (Stream.DataAvailable())
                 {
-                    if (stream.Read(buffer, 0, 1) != 1)
+                    if (Stream.Read(buffer, 0, 1) != 1)
                         throw new EndOfStreamException();
 
                     if (buffer[0] == ACK)
                     {
                         "< [ACK]".Log();
-                        total_errors += errors;
-                        errors = 0;
+                        TotalErrors += Errors;
+                        Errors = 0;
                         if (isLastBlock && !sentEOT)
                         {
                             SendEOT(); // don't leave until acknowledged
@@ -142,7 +142,7 @@ namespace xmodem_test
                     {
                         sentEOT = false;
                         "< [NAK]".Log();
-                        if (++errors >= 10)
+                        if (++Errors >= 10)
                             return false;
                         if (!ResendBlock())
                             return false;
@@ -173,8 +173,8 @@ namespace xmodem_test
         {
             var packet = new List<byte>();
             packet.Add(SOH);
-            packet.Add(blockNum);
-            packet.Add((byte)~blockNum);
+            packet.Add(BlockNum);
+            packet.Add((byte)~BlockNum);
             int size = 128;
             byte checksum = 0;
             for (int i = 0; i < size; ++i)
@@ -186,19 +186,19 @@ namespace xmodem_test
             packet.Add(checksum);
             var packet_bytes = packet.ToArray();
 
-            $"> [#{blockNum}]: {BytesToString(packet_bytes)}".Log();
-            stream.Write(packet_bytes, 0, packet_bytes.Length);
+            $"> [#{BlockNum}]: {BytesToString(packet_bytes)}".Log();
+            Stream.Write(packet_bytes, 0, packet_bytes.Length);
 
             offset += size;
             if (offset > bytes.Length)
                 offset = bytes.Length;
-            ++blockNum;
+            ++BlockNum;
             return true;
         }
 
         bool ResendBlock()
         {
-            --blockNum;
+            --BlockNum;
             if (offset > 0)
             {
                 if (offset == bytes.Length)
@@ -207,7 +207,7 @@ namespace xmodem_test
                     offset -= 128;
             }
             else
-                blockNum = 1;
+                BlockNum = 1;
 
             return SendBlock();
         }
