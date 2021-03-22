@@ -11,6 +11,7 @@ namespace xmodem_test
         public bool EndOfTransmissionEventHandled();
         public bool GoodBlockEventHandled();
         public bool RepeatedBlockEventHandled();
+        public bool UnexpectedBlockEventHandled();
         public bool CancelEventHandled();
         public bool InvalidPacketEventHandled();
         public bool TimeoutEventHandledHandled();
