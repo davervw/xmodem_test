@@ -40,10 +40,6 @@ namespace xmodem_test
         {
             public XmodemReceive xmodemReceiver;
             public List<byte> Bytes { get; protected set; }
-            public SimpleStream Stream => xmodemReceiver.Stream;
-            public int Errors { get => xmodemReceiver.Errors; set => xmodemReceiver.Errors = value; }
-            public int TotalErrors { get => xmodemReceiver.TotalErrors; set => xmodemReceiver.TotalErrors = value; }
-            public byte BlockNum { get => xmodemReceiver.BlockNum; set => xmodemReceiver.BlockNum = value; }
             public DateTime Timeout { get; set; }
             public bool ReadDone { get; set; }
 
@@ -65,6 +61,7 @@ namespace xmodem_test
             {
                 Bytes = new List<byte>();
                 Timeout = NextTimeout();
+                ReadDone = false;
             }
 
             void HandleDataOrTimeout()
@@ -73,6 +70,24 @@ namespace xmodem_test
                     HandleData();
                 else
                     CheckForTimeoutOrYield();
+            }
+
+            void CheckForTimeoutOrYield()
+            {
+                if (DateTime.Now >= Timeout)
+                {
+                    LogTimeout();
+                    if (!AnotherErrorTooMany())
+                    {
+                        if (!TimeoutEventHandledExternally())
+                            SendNAK();
+                        Bytes.Clear();
+                        Timeout = NextTimeout();
+                    }
+                }
+
+                if (!ReadDone)
+                    YieldProcessor20Milliseconds();
             }
 
             void HandleData()
@@ -96,6 +111,43 @@ namespace xmodem_test
                 HandleMoreBytes();
             }
 
+            void ReadFirstByte()
+            {
+                var byte_buffer = new byte[1];
+                if (Stream.Read(byte_buffer, 0, 1) != 1)
+                    throw new EndOfStreamException();
+                Bytes.Clear();
+                Bytes.Add(byte_buffer[0]);
+            }
+
+            void HandleFirstByte()
+            {
+                switch (Bytes[0])
+                {
+                    case SOH:
+                        HandleBlockStart();
+                        break;
+                    case EOT:
+                        HandleEndOfTransmission();
+                        break;
+                    case CAN:
+                        HandleCancel();
+                        break;
+                    default:
+                        HandleUnexpectedByte();
+                        break;
+                }
+            }
+
+            void ReadMoreBytes()
+            {
+                var more = new byte[132 - Bytes.Count];
+                int count = Stream.Read(more, 0, more.Length);
+                if (count == 0)
+                    throw new EndOfStreamException();
+                Bytes.AddRange(more);
+            }
+
             void HandleMoreBytes()
             {
                 bool packetIsComplete = (Bytes.Count == 132);
@@ -109,6 +161,33 @@ namespace xmodem_test
                     HandleValidPacket();
                 else
                     HandleInvalidPacket();
+            }
+
+            void HandleBlockStart()
+            {
+                ResetErrors();
+            }
+
+            void HandleEndOfTransmission()
+            {
+                LogEndOfTransmission();
+                ResetErrors();
+                ReadDone = true;
+            }
+
+            void HandleCancel()
+            {
+                LogCancel();
+                ResetErrors();
+                ReadDone = true;
+            }
+
+            void HandleUnexpectedByte()
+            {
+                var readByte = Bytes[Bytes.Count - 1];
+                LogUnexpectedByte(readByte);
+                ReadUntilNoDataAvailableAfterMilliseconds(500);
+                CheckAnotherErrorTooMany();
             }
 
             void HandleValidPacket()
@@ -148,76 +227,6 @@ namespace xmodem_test
                 bool check = AnotherErrorTooMany();
             }
 
-            void ReadFirstByte()
-            {
-                var byte_buffer = new byte[1];
-                if (Stream.Read(byte_buffer, 0, 1) != 1)
-                    throw new EndOfStreamException();
-                Bytes.Clear();
-                Bytes.Add(byte_buffer[0]);
-            }
-
-            void HandleFirstByte()
-            {
-                switch (Bytes[0])
-                {
-                    case CAN:
-                        HandleCancel();
-                        break;
-                    case EOT:
-                        HandleEndOfTransmission();
-                        break;
-                    case SOH:
-                        HandleBlockStart();
-                        break;
-                    default:
-                        HandleUnexpectedByte();
-                        break;
-                }
-            }
-
-            void HandleCancel()
-            {
-                LogCancel();
-                ResetErrors();
-                ReadDone = true;
-            }
-
-            void HandleEndOfTransmission()
-            {
-                LogEndOfTransmission();
-                ResetErrors();
-                ReadDone = true;
-            }
-
-            void HandleBlockStart()
-            {
-                ResetErrors();
-            }
-
-            void CheckForTimeoutOrYield()
-            {
-                if (DateTime.Now >= Timeout)
-                {
-                    LogTimeout();
-                    if (!AnotherErrorTooMany())
-                    {
-                        if (!TimeoutEventHandledExternally())
-                            SendNAK();
-                        Bytes.Clear();
-                        Timeout = NextTimeout();
-                    }
-                }
-
-                if (!ReadDone)
-                    YieldProcessor20Milliseconds();
-            }
-
-            void YieldProcessor20Milliseconds()
-            {
-                Thread.Sleep(20);
-            }
-
             bool IsValidPacket()
             {
                 bool isSizeCorrect = (Bytes.Count == 132);
@@ -242,21 +251,9 @@ namespace xmodem_test
                 Errors = 0;
             }
 
-            void ReadMoreBytes()
+            void YieldProcessor20Milliseconds()
             {
-                var more = new byte[132 - Bytes.Count];
-                int count = Stream.Read(more, 0, more.Length);
-                if (count == 0)
-                    throw new EndOfStreamException();
-                Bytes.AddRange(more);
-            }
-
-            void HandleUnexpectedByte()
-            {
-                var readByte = Bytes[Bytes.Count - 1];
-                LogUnexpectedByte(readByte);
-                ReadUntilNoDataAvailableAfterMilliseconds(500);
-                CheckAnotherErrorTooMany();
+                Thread.Sleep(20);
             }
 
             void LogValidPacket()
@@ -297,11 +294,19 @@ namespace xmodem_test
                 "< [EOT]".Log();
             }
 
-            public void SendNAK() => xmodemReceiver.SendNAK();
-
             public void ReadUntilNoDataAvailableAfterMilliseconds(int milliseconds) => xmodemReceiver.ReadUntilNoDataAvailableAfterMilliseconds(milliseconds);
 
             public DateTime NextTimeout() => DateTime.Now.Add(new TimeSpan(0, 0, seconds: 10));
+
+            public SimpleStream Stream => xmodemReceiver.Stream;
+
+            public int Errors { get => xmodemReceiver.Errors; set => xmodemReceiver.Errors = value; }
+
+            public int TotalErrors { get => xmodemReceiver.TotalErrors; set => xmodemReceiver.TotalErrors = value; }
+
+            public byte BlockNum { get => xmodemReceiver.BlockNum; set => xmodemReceiver.BlockNum = value; }
+
+            public void SendNAK() => xmodemReceiver.SendNAK();
 
             bool InvalidPacketEventHandledExternally() => xmodemReceiver.ErrorHandler.InvalidPacketEventHandled();
 
