@@ -67,7 +67,7 @@ namespace xmodem_unit_tests
 
             Assert.IsTrue(File.Exists(RecvFilename));
 
-            byte[] send_bytes = File.ReadAllBytes(SendFilename);
+            byte[] send_bytes = TestData;
             byte[] recv_bytes = File.ReadAllBytes(RecvFilename);
             int wholePacketSendBytes = ((send_bytes.Length + 127) / 128) * 128;
 
