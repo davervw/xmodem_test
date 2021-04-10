@@ -34,6 +34,8 @@ namespace xmodem_unit_tests
 
             var receiver = new SimpleNetworkStream(sock);
             var rx = new XmodemReceive(receiver);
+            var event_reporter = new XmodemReceiveMakeEventReport();
+            rx.ErrorHandler = event_reporter;
 
             var result = rx.Receive();
             var received = rx.Received;
@@ -51,6 +53,8 @@ namespace xmodem_unit_tests
 
             $"result={result} received={BytesToString(received)}"
                 .Log();
+
+            event_reporter.ReportToLog();
         }
 
         static void Thread_Net_Send_Binary(object context)

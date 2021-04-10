@@ -17,6 +17,8 @@ namespace xmodem_unit_tests
         {
             var sender = new SimpleBidirectionalByteStream();
             var rx = new XmodemReceive(sender.GetOtherEnd());
+            var event_reporter = new XmodemReceiveMakeEventReport();
+            rx.ErrorHandler = event_reporter;
 
             // start sender in another thread
             Thread send_thread = new Thread(Thread_Bidi_Send_Binary);
@@ -40,6 +42,8 @@ namespace xmodem_unit_tests
 
             $"result={result} received={BytesToString(received)}"
                 .Log();
+
+            event_reporter.ReportToLog();
         }
 
         static void Thread_Bidi_Send_Binary(object context)
