@@ -14,7 +14,15 @@ namespace xmodem_unit_tests
         const string RecvFilename = "recv.bin";
         volatile static Thread thread_sx = null;
         volatile static Thread thread_rx = null;
-        static byte[] TestData = new byte[] { 0x41, 0x42, 0x43, 0x31, 0x32, 0x33 };
+        static byte[] TestData;
+
+        static MainProgramTest()
+        {
+            const int size = 1000;
+            TestData = new byte[size];
+            for (int i = 0; i < size; ++i)
+                TestData[i] = (byte)i;
+        }
 
         [TestMethod]
         public void TestMainNetSendAndRecv1()
